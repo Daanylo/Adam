@@ -1,0 +1,10 @@
+# Basic requirements for face recognition
+opencv-python==4.8.1.78
+opencv-contrib-python==4.8.1.78
+numpy==1.24.3
+Pillow==10.0.1
+
+# Advanced requirements (optional, for face_recognition_app.py)
+# face-recognition==1.3.0
+# dlib
+# Note: dlib requires CMake and can be difficult to install

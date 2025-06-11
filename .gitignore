@@ -1,0 +1,12 @@
+# Ignore generated audio and image files
+/audio_output/
+text-to-speech/audio_output/
+text-to-speech/venv/
+llm/ai_chat_config.json
+
+# Ignore all wav, mp3, jpg, jpeg, png files anywhere
+*.wav
+*.mp3
+*.jpg
+*.jpeg
+*.png

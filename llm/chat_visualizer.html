@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Chat Audio Visualizer</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #181c24; color: #fff; margin: 0; padding: 0; }
+    #container { max-width: 600px; margin: 40px auto; background: #23283a; border-radius: 12px; box-shadow: 0 4px 24px #0006; padding: 32px; }
+    #chat { min-height: 200px; margin-bottom: 24px; }
+    .ai-msg, .user-msg { margin: 12px 0; padding: 12px 18px; border-radius: 18px; max-width: 80%; display: inline-block; }
+    .ai-msg { background: #2e3650; color: #fff; align-self: flex-start; }
+    .user-msg { background: #4e8cff; color: #fff; align-self: flex-end; float: right; }
+    #visualizer { width: 100%; height: 60px; background: #181c24; border-radius: 8px; margin-bottom: 16px; }
+    #mic-btn { background: #4e8cff; color: #fff; border: none; border-radius: 50%; width: 56px; height: 56px; font-size: 2em; cursor: pointer; transition: background 0.2s; }
+    #mic-btn.listening { background: #ff4e4e; }
+    #prompt-input { width: 80%; padding: 10px; border-radius: 8px; border: none; font-size: 1.1em; }
+    #send-btn { padding: 10px 18px; border-radius: 8px; border: none; background: #4e8cff; color: #fff; font-size: 1.1em; cursor: pointer; }
+    #controls { display: flex; gap: 12px; align-items: center; }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="chat"></div>
+    <canvas id="visualizer"></canvas>
+    <div id="controls">
+      <button id="mic-btn" title="Speak"><span id="mic-icon">🎤</span></button>
+      <input id="prompt-input" type="text" placeholder="Type or speak your message..." autocomplete="off" />
+      <button id="send-btn">Send</button>
+    </div>
+  </div>
+  <script>
+    // --- Audio Visualizer ---
+    const visualizer = document.getElementById('visualizer');
+    const vctx = visualizer.getContext('2d');
+    let audioContext, analyser, dataArray, sourceNode, animationId;
+    visualizer.width = visualizer.offsetWidth;
+    visualizer.height = 60;
+
+    function drawVisualizer() {
+      if (!analyser) return;
+      analyser.getByteTimeDomainData(dataArray);
+      vctx.clearRect(0, 0, visualizer.width, visualizer.height);
+      vctx.beginPath();
+      let sliceWidth = visualizer.width / dataArray.length;
+      let x = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        let v = dataArray[i] / 128.0;
+        let y = v * visualizer.height / 2;
+        if (i === 0) vctx.moveTo(x, y);
+        else vctx.lineTo(x, y);
+        x += sliceWidth;
+      }
+      vctx.strokeStyle = '#4e8cff';
+      vctx.lineWidth = 3;
+      vctx.stroke();
+      animationId = requestAnimationFrame(drawVisualizer);
+    }
+
+    function startVisualizer(stream) {
+      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048;
+      dataArray = new Uint8Array(analyser.fftSize);
+      sourceNode = audioContext.createMediaElementSource(stream);
+      sourceNode.connect(analyser);
+      analyser.connect(audioContext.destination);
+      drawVisualizer();
+    }
+    function stopVisualizer() {
+      cancelAnimationFrame(animationId);
+      vctx.clearRect(0, 0, visualizer.width, visualizer.height);
+      if (sourceNode) sourceNode.disconnect();
+      if (analyser) analyser.disconnect();
+    }
+
+    // --- Chat UI ---
+    const chat = document.getElementById('chat');
+    function addMessage(text, isAI) {
+      const msg = document.createElement('div');
+      msg.className = isAI ? 'ai-msg' : 'user-msg';
+      msg.textContent = text;
+      chat.appendChild(msg);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    // --- Web Speech API (Speech Recognition) ---
+    const micBtn = document.getElementById('mic-btn');
+    const micIcon = document.getElementById('mic-icon');
+    const promptInput = document.getElementById('prompt-input');
+    let recognizing = false;
+    let recognition;
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.continuous = false;
+      recognition.onstart = () => {
+        recognizing = true;
+        micBtn.classList.add('listening');
+        micIcon.textContent = '🔴';
+      };
+      recognition.onend = () => {
+        recognizing = false;
+        micBtn.classList.remove('listening');
+        micIcon.textContent = '🎤';
+      };
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        promptInput.value = transcript;
+        sendPrompt();
+      };
+    } else {
+      micBtn.disabled = true;
+      micBtn.title = 'Speech recognition not supported';
+    }
+    micBtn.onclick = () => {
+      if (recognition && !recognizing) recognition.start();
+      else if (recognition && recognizing) recognition.stop();
+    };
+
+    // --- Send prompt to backend ---
+    async function sendPrompt() {
+      const prompt = promptInput.value.trim();
+      if (!prompt) return;
+      addMessage(prompt, false);
+      promptInput.value = '';
+      addMessage('Thinking...', true);
+      try {
+        // Change the URL below if your Flask API is on a different port or path
+        const resp = await fetch('http://127.0.0.1:5100/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt })
+        });
+        const data = await resp.json();
+        const aiText = data.response || '[No response]';
+        document.querySelectorAll('.ai-msg').forEach(m => { if (m.textContent === 'Thinking...') m.textContent = aiText; });
+        playTTS(aiText);
+      } catch (e) {
+        document.querySelectorAll('.ai-msg').forEach(m => { if (m.textContent === 'Thinking...') m.textContent = '[Error contacting backend]'; });
+      }
+    }
+    document.getElementById('send-btn').onclick = sendPrompt;
+    promptInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendPrompt(); });
+
+    // --- Play TTS and visualize ---
+    function playTTS(text) {
+      // Use Web Speech API for TTS
+      if ('speechSynthesis' in window) {
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'en-US';
+        utter.onstart = () => {
+          startTTSVisualizer();
+        };
+        utter.onend = () => {
+          stopVisualizer();
+        };
+        window.speechSynthesis.speak(utter);
+      }
+    }
+    // Visualize TTS output (simulate with oscillator, since Web Speech API has no direct audio stream)
+    function startTTSVisualizer() {
+      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048;
+      dataArray = new Uint8Array(analyser.fftSize);
+      // Simulate with oscillator for visualization
+      const osc = audioContext.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = 220;
+      osc.connect(analyser);
+      analyser.connect(audioContext.destination);
+      osc.start();
+      drawVisualizer();
+      setTimeout(() => {
+        osc.stop();
+        osc.disconnect();
+        stopVisualizer();
+      }, 1200);
+    }
+  </script>
+</body>
+</html>

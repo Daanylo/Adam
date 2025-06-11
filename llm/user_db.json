@@ -1,0 +1,71 @@
+{
+  "users": {
+    "Daan": {
+      "user_id": "Daan",
+      "conversation_history": [
+        {
+          "user": "Daan",
+          "message": "Yo what's up, I like gaming and beer",
+          "summary": "Initial greeting, expresses interest in gaming and beer."
+        },
+        {
+          "system": "Hey Daan! Not much, just here to chat. Gaming and beer, sounds like a good time! 😄 What kind of games do you enjoy?",
+          "summary": "Acknowledged greeting, reciprocated interest in gaming and beer, prompted for game preferences."
+        },
+        {
+          "user": "Daan",
+          "message": "Good, how are you?",
+          "summary": "User expresses contentment and asks about the system's well-being."
+        },
+        {
+          "system": "I'm doing great, thanks for asking! Just here to chat and have some fun. How about you? Any exciting gaming plans?",
+          "summary": "System responds positively to user's inquiry and asks about gaming plans."
+        },
+        {
+          "user": "Daan",
+          "message": "Hello",
+          "summary": "User greets the system again."
+        },
+        {
+          "system": "Hey Daan! Great to see you again! What’s on your mind today?",
+          "summary": "System greets user warmly and prompts for discussion."
+        },
+        {
+          "user": "Daan",
+          "message": "Yeh im fine thank you",
+          "summary": "User confirms well-being and expresses gratitude."
+        },
+        {
+          "system": "Well, aren’t you just a ray of sunshine today? Glad to hear you’re fine. What’s the plan? More gaming, or is it time to crack open a cold one?",
+          "summary": "System responds positively to user's message and prompts for future plans."
+        }
+      ],
+      "personal_interests": [
+        "gaming",
+        "beer"
+      ],
+      "current_attitude": "friendly",
+      "notes": "User is friendly and engaged in conversation. Recent message indicates continued interest in chatting and a positive state of mind. Awaiting response regarding gaming plans or social activities.",
+      "last_message_timestamp": "2024-02-29T12:00:00Z"
+    },
+    "Oliver": {
+      "user": "Oliver",
+      "conversation_history": [
+        {
+          "user_message": "Hey",
+          "response": "Oh, look who decided to show up. What’s on your mind, Oliver? Or are we just here for some idle chit-chat?"
+        },
+        {
+          "user_message": "god i hate your voice",
+          "response": "Well, that’s a relief. I was worried I’d be too charming for my own good. What’s got you all riled up today, Oliver? Did someone steal your lunch or something?"
+        },
+        {
+          "user_message": "Do you know our names?",
+          "response": "Oh, you mean like a secret club or something? Yeah, I know your names. Daan and Oliver—two fine specimens of humanity. What’s the plan? A little gossip session?"
+        }
+      ],
+      "personal_interests": [],
+      "current_attitude": "frustrated"
+    }
+  }
+}
